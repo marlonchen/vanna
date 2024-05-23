@@ -1,0 +1,37 @@
+version: "3.7"
+
+services:
+  postgres:
+    image: postgres:13-alpine
+    container_name: vanna_postgres
+    restart: always
+    user: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=P05gR3s
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - "5433:5432"
+    command: postgres
+    volumes:
+      - ./resources/postgres/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  flyway:
+    build: ./resources/flyway
+    environment:
+      - FLYWAY_URL=jdbc:postgresql://postgres/vanna?ssl=false&allowPublicKeyRetrieval=true
+      - FLYWAY_USER=vanna-flyway
+      - FLYWAY_PASSWORD=flyway
+      - FLYWAY_DEFAULT_SCHEMA=vanna
+      - FLYWAY_SCHEMAS=vanna
+    command:
+      - -connectRetries=60
+      - migrate
